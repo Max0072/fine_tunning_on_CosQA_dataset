@@ -1,0 +1,12 @@
+numpy
+faiss-cpu
+fastapi
+sentence_transformers
+transformers
+pydantic
+python-multipart
+datasets
+uvicorn
+torch
+tqdm
+matplotlib
