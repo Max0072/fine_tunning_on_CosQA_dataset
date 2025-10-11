@@ -1,6 +1,5 @@
 .venv
 .env
-best_model/
 __pycache__/
 *.pyc
 *.pyo
