@@ -1,14 +1,24 @@
-import faiss
+import os, faiss
+import torch
 import numpy as np
 from typing import Dict, List, Optional, Any
 from pydantic import BaseModel, Field
 from datasets import Dataset
 
-import os, faiss
+
 
 def faiss_threads_to_one():
     os.environ["OMP_NUM_THREADS"] = "1"
     faiss.omp_set_num_threads(1)
+
+
+def get_device():
+    if torch.cuda.is_available():
+        return torch.device("cuda")
+    if getattr(torch.backends, "mps", None) and torch.backends.mps.is_available():
+        return torch.device("mps")
+    else:
+        return torch.device("cpu")
 
 
 # Data class
@@ -23,18 +33,20 @@ class SEjsonDataclass(BaseModel):
 
 class SearchEngine:
     def __init__(self, model):
-        self.model = model
-        dimension = 384
+        self.device = get_device()
+        self.model = model.to(self.device)
+        dimension = 384 # size of all-MiniLM-L6-v2 model embeddings
         self.index = faiss.IndexIDMap(faiss.IndexFlatIP(dimension))
         self.str_id_to_int_id: Dict[str, int] = {}
         self.int_id_to_data: Dict[int, Any] = {}
         self.data: List[Any] = []
         self._next_int_id = 0
+
         faiss_threads_to_one() # due to the segfaults in OpenMP on macOS
 
     # updates the model
     def update_model(self, model):
-        self.model = model
+        self.model = model.to(self.device)
 
     # Get an embedding with normalization
     def embed_normalized(self, text: str) -> np.ndarray:
@@ -55,7 +67,6 @@ class SearchEngine:
         self.int_id_to_data.clear()
         self._next_int_id = 0
         self.index.reset()
-        print("All data deleted.")
 
     # Add a list of texts to the index
     def add_corpus_to_index(self, corpus: List[str]):
@@ -74,7 +85,6 @@ class SearchEngine:
             self.int_id_to_data[self._next_int_id] = doc
             self._next_int_id += 1
             self.add_corpus_to_index([doc.text])
-        print("Data updated.")
 
     # Find similar items from a given vector
     def find_similar_from_vector(self, vec: np.ndarray, k: int):

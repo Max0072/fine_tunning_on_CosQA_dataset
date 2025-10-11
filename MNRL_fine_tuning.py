@@ -3,7 +3,7 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 import numpy as np
 import matplotlib.pyplot as plt
 
-from transformers import get_cosine_schedule_with_warmup, get_constant_schedule_with_warmup
+from transformers import get_constant_schedule_with_warmup
 from sentence_transformers import SentenceTransformer
 from datasets import load_dataset
 from torch.utils.data import DataLoader
@@ -21,7 +21,7 @@ def plot_graph(steps_per_epoch, total_epochs):
 
     window = 25
     kernel = np.ones(window) / window
-    moving = np.convolve(losses, kernel, mode="same")
+    moving = np.convolve(losses, kernel, mode="valid")
 
     plt.figure(figsize=(8, 4.5))
     plt.plot(losses, label="Batch loss (per step)")
@@ -35,11 +35,13 @@ def plot_graph(steps_per_epoch, total_epochs):
     plt.ylabel("Loss")
     plt.legend()
     plt.tight_layout()
+    plt.savefig("training_loss.png", dpi=300, bbox_inches='tight')
+    print("Plot saved as training_loss.png")
     plt.show()
 
 # function for DataLoader
 def collate_fn(batch):
-    queries, corpus= zip(*batch)
+    queries, corpus = zip(*batch)
     return list(queries), list(corpus)
 
 # process data
@@ -174,14 +176,9 @@ def main():
     temp = 0.05
     max_norm = 1.0
     criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.AdamW(model.parameters(), lr=2e-5, weight_decay=1e-2)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=1.5e-5, weight_decay=1e-2)
     scheduler = get_constant_schedule_with_warmup(optimizer, num_warmup_steps=num_warmup_steps)
-    # scheduler = get_cosine_schedule_with_warmup(
-    #         optimizer,
-    #         num_warmup_steps=num_warmup_steps,
-    #         num_training_steps=num_training_steps,
-    #         num_cycles=0.5
-    #     )
+
 
     # initial loss (so we know that the model actually became better)
     initial_val_loss = evaluate(model, val_loader, criterion, temp, device)

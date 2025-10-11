@@ -45,7 +45,7 @@ def get_metrics(model):
 
 
 def main():
-    model = SentenceTransformer("best_model")
+    model = SentenceTransformer("all-miniLM-L6-v2")
     recall_10, mrr_10, ndcg_10 = get_metrics(model)
     print(f"Recall-10: {recall_10}")
     print(f"MRR-10: {mrr_10}")
@@ -55,16 +55,3 @@ def main():
 if __name__ == "__main__":
     main()
 
-# before fine-tunning
-# Recall-10: 0.978
-# MRR-10: 0.7863507936507936
-# NDCG-10: 0.8340862560966575
-
-# best after fine-tunning
-# Recall-10: 0.996
-# MRR-10: 0.8790388888888889
-# NDCG-10: 0.908669981351256
-
-# Recall-10: 0.994
-# MRR-10: 0.8587523809523809
-# NDCG-10: 0.8930597373488842
