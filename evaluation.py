@@ -25,6 +25,9 @@ def evaluate_model_on_dataset(model):
     ds_queries = ds["queries"]
     test_queries = ds_queries.filter(lambda x: x["partition"] == "test")
 
+    # Создаем словарь corpus_id -> текст кода для быстрого доступа
+    corpus_id_to_text = {item["_id"]: item["text"] for item in test_corpus}
+
     Engine.upload_data(test_corpus)                                             # upload corpus to the faiss index
     results = Engine.find_similar_from_text_batch(test_queries, 10)    # search for each query in the index
     # results have format: [{"ids": [...], "scores": [...]}, ...]
@@ -33,8 +36,10 @@ def evaluate_model_on_dataset(model):
 
     for i in range(ds_test.shape[0]):
         corp_id = ds_test[i]["corpus-id"]
-        int_corp_id = Engine.str_id_to_int_id[corp_id]
-        rank = results[i]["ids"].index(int_corp_id) + 1 if int_corp_id in results[i]["ids"] else -1
+        text = corpus_id_to_text[corp_id]
+        found_int_ids = results[i]["ids"]
+        found_texts = [Engine.int_id_to_data[int_id].text for int_id in found_int_ids]
+        rank = found_texts.index(text) + 1 if text in found_texts else -1
         ranks.append(rank)
     return ranks
 
@@ -54,4 +59,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

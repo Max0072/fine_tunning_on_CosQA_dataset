@@ -179,7 +179,6 @@ def main():
     optimizer = torch.optim.AdamW(model.parameters(), lr=1.5e-5, weight_decay=1e-2)
     scheduler = get_constant_schedule_with_warmup(optimizer, num_warmup_steps=num_warmup_steps)
 
-
     # initial loss (so we know that the model actually became better)
     initial_val_loss = evaluate(model, val_loader, criterion, temp, device)
     initial_test_loss = evaluate(model, test_loader, criterion, temp, device)
